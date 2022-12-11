@@ -1,0 +1,28 @@
+{
+  "name": "mightygoose-workers",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:mightygoose/mightygoose-workers.git",
+  "author": "nogizhopaboroda <al.zhukoff@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "dev": "env $(\\cat .env| xargs) node workers/items_processor.js",
+    "test": "env $(\\cat .env| xargs) NODE_ENV=test mocha tests/*.js"
+  },
+  "dependencies": {
+    "bloom-text-compare": "^0.0.0",
+    "cheerio": "^1.0.0-rc.12",
+    "co": "^4.6.0",
+    "jackrabbit": "^4.4.0",
+    "lodash": "^4.17.21",
+    "log-colors": "^1.0.0",
+    "massive": "^6.10.2",
+    "pg": "^8.8.0",
+    "pryjs": "^1.0.3",
+    "qs": "^6.11.0",
+    "spotify-web-api-node": "^5.0.2"
+  },
+  "devDependencies": {
+    "dotenv": "^16.0.3"
+  }
+}
