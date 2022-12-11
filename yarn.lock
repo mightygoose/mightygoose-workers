@@ -2424,6 +2424,11 @@ readable-stream@~1.0.2:
     isarray "0.0.1"
     string_decoder "~0.10.x"
 
+replace-special-characters@^1.2.7:
+  version "1.2.7"
+  resolved "https://registry.yarnpkg.com/replace-special-characters/-/replace-special-characters-1.2.7.tgz#53ce640ac7614ba42d945c37f586bed619217966"
+  integrity sha512-LI6wLSQIAaajYAKpsb5bz5QyttOSRd3Dy41BvBFAuZKkH9VjFVit0Rr3i63+Jw5TkMCJv+4bkGwZdJ/CXjKpqg==
+
 request@2.9.x:
   version "2.9.203"
   resolved "https://registry.yarnpkg.com/request/-/request-2.9.203.tgz#6c1711a5407fb94a114219563e44145bcbf4723a"

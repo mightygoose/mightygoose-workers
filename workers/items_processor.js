@@ -3,8 +3,8 @@
 const pry = require('pryjs');
 
 const log = require('log-colors');
-const spawn = require('co');
 const _ = require('lodash');
+const replaceSpecialCharacters = require('replace-special-characters');
 
 const string_parser = require('../lib/string_parser');
 const StringAnalyser = require('../lib/string_analyser');
@@ -28,17 +28,17 @@ const MAX_RESTORING_ATTEMPTS = 2;
 
 class ItemsProcessor {
 
-  constructor(){
+  constructor() {
     var self = this;
 
-    spawn(function*(){
+    const init = async () => {
 
       require('workers/items_postprocessor');
 
-      var connections = yield [
+      var connections = await Promise.all([
         require('lib/clients/db'),
         require('lib/clients/queue')
-      ];
+      ]);
 
       self.db = connections[0];
       self.queue = connections[1];
@@ -66,12 +66,14 @@ class ItemsProcessor {
           ) z
         WHERE y.mask = z.mask AND occurencies > 10
         ORDER BY occurencies desc
+        LIMIT 1000
       `;
 
-      var masks = yield new Promise((resolve) => self.db.run(masks_query, (err, items) => {
-        if(err){ reject(err); }
+      var masks = await new Promise((resolve) => self.db.run(masks_query, (err, items) => {
+        if (err) { reject(err); }
         resolve(items);
       }));
+
       log.info('masks pulled', masks.length);
 
       log.info('training title analyser');
@@ -85,15 +87,18 @@ class ItemsProcessor {
       });
 
       self.queue
-      .default()
-      .queue({ name: RABBITMQ_CHANNEL })
-      .consume(self.process_item.bind(self));
-    }).catch(e => log.error(`erroron initialisation. ${e}`));
+        .default()
+        .queue({ name: RABBITMQ_CHANNEL })
+        .consume(self.process_item.bind(self));
+    };
+
+    init().catch(e => log.error(`erroron initialisation. ${e}`));
+
 
     return this;
   }
 
-  static generate_query_string(item){
+  static generate_query_string(item) {
 
 
     //should be common logic for all restorers
@@ -119,8 +124,8 @@ class ItemsProcessor {
       acc.fields.push(`"${key}"`);
       acc.values.push(`'${(
         typeof value === 'string'
-        ? value
-        : JSON.stringify(value)
+          ? value
+          : JSON.stringify(value)
       ).replace(/'/ig, "''")}'`);
       return acc;
     }, { fields: [], values: [] });
@@ -132,28 +137,28 @@ class ItemsProcessor {
     `;
   }
 
-  static generate_badges(item){
+  static generate_badges(item) {
     var badges = JSON.parse(item['badges']);
     var discogs_data = item.discogs_data;
-    if(!discogs_data){
+    if (!discogs_data) {
       badges.push('discogs-no-results');
     } else {
-      if(discogs_data.similarity === 1){
+      if (discogs_data.similarity === 1) {
         badges.push('discogs-title-exact-match');
       } else {
         var prepared_item_title = _.trim(
           item['title']
-          .replace(/\(\d{4}\)/ig, '')
-          .replace(/\[\d{4}\]/ig, '')
-          .replace(/\d{0,4}kbps/ig, '')
-          .replace(/\(\)/ig, '')
-          .replace(/\[\]/ig, '')
-          .replace(/(\/.*)/ig, '')
-          .replace(/[^0-9a-zA-Z ]+/ig, '')
-          .toLowerCase());
+            .replace(/\(\d{4}\)/ig, '')
+            .replace(/\[\d{4}\]/ig, '')
+            .replace(/\d{0,4}kbps/ig, '')
+            .replace(/\(\)/ig, '')
+            .replace(/\[\]/ig, '')
+            .replace(/(\/.*)/ig, '')
+            .replace(/[^0-9a-zA-Z ]+/ig, '')
+            .toLowerCase());
 
         var prepared_discogs_title = discogs_data['title'].replace(/[^0-9a-zA-Z ]+/ig, '').toLowerCase();
-        if(prepared_item_title === prepared_discogs_title){
+        if (prepared_item_title === prepared_discogs_title) {
           badges.push('discogs-title-match-after-clean');
         } else {
           badges.push('discogs-title-doesnt-match');
@@ -163,8 +168,8 @@ class ItemsProcessor {
     return badges;
   }
 
-  static generate_status(item){
-    switch(true){
+  static generate_status(item) {
+    switch (true) {
       case !~item.badges.indexOf('discogs-no-results') && item.discogs_data.similarity > 0.5:
       case item.restorers_data.itunes && item.restorers_data.itunes.similarity === 1:
       case item.restorers_data.deezer && item.restorers_data.deezer.similarity === 1:
@@ -175,8 +180,8 @@ class ItemsProcessor {
     }
   }
 
-  static generate_table_name(item){
-    switch(true){
+  static generate_table_name(item) {
+    switch (true) {
       case item.status === 'good':
         return 'items';
       default:
@@ -184,39 +189,54 @@ class ItemsProcessor {
     }
   }
 
-  static process_data(item, masks){
-    return spawn(function*(){
-
+  static async process_data(item, masks) {
+    try {
       log.info(`got item #${item.sh_key}`);
       var processed_item = Object.assign({}, item);
 
       //should be filtered on spider side
       Object.assign(processed_item, {
-        title: _.trim(processed_item.title)
+        title: _.trim(
+          replaceSpecialCharacters(processed_item.title).replace(/\p{C}/gu, '').replace(/\p{Zs}/gu, ' ').replace(/…/gu, '')
+        )
       });
 
       var mask = analyser.classify_mask(processed_item.title)[0];
-      var title_variants = string_parser.parse_string(processed_item.title, mask.mask).slice(0, MAX_RESTORING_ATTEMPTS);
+      var title_variants = mask ? string_parser.parse_string(processed_item.title, mask.mask).slice(0, MAX_RESTORING_ATTEMPTS) : [];
+
+
+      const restorersData = await Promise.all(Object.keys(restorers).map(async (restorer_name) => {
+        var data = null;
+        try {
+
+          if (!title_variants.length) {
+            return null
+            // data = await restorers[restorer_name].restore(processed_item);
+            // return { [restorer_name]: data };
+          }
+          for (var variant of title_variants) {
+            data = await restorers[restorer_name].restore(Object.assign({}, processed_item, {
+              title: `${variant.artist} - ${variant.album}`
+            }));
+            if (data !== null) {
+              return { [restorer_name]: data };
+            }
+          }
+        } catch (e) {
+          log.warn(`could not process item ${item.id} with restorer  ${restorer_name}. Error: ${e}`) 
+        }
+        return data;
+      }));
 
       Object.assign(processed_item, {
-        restorers_data: yield Object.keys(restorers).reduce((acc, restorer_name) => {
-          acc[restorer_name] = spawn(function*(){
-            var data = null;
-            if(!title_variants.length){
-              data = yield restorers[restorer_name].restore(processed_item);
-              return data;
-            }
-            for(var variant of title_variants){
-              data = yield restorers[restorer_name].restore(Object.assign({}, processed_item, {
-                title: `${variant.artist} - ${variant.album}`
-              }));
-              if(data !== null){
-                return data;
-              }
-            }
-            return data;
-          });
-          return acc;
+        restorers_data: restorersData.reduce((acc, item) => {
+          if(!item){
+            return acc;
+          }
+          return {
+            ...acc,
+            ...item,
+          }
         }, {})
       });
 
@@ -229,8 +249,8 @@ class ItemsProcessor {
       //create method get_merged_tags()
       Object.assign(processed_item, {
         merged_tags: _.uniq(
-          JSON.parse(processed_item.tags).concat((processed_item.discogs_data || {genre: []}).genre)
-                                         .concat((processed_item.discogs_data || {style: []}).style)
+          JSON.parse(processed_item.tags).concat((processed_item.discogs_data || { genre: [] }).genre)
+            .concat((processed_item.discogs_data || { style: [] }).style)
         )
       });
 
@@ -259,19 +279,21 @@ class ItemsProcessor {
 
       return processed_item;
 
-    }).catch(e => log.error(`error while processing item. ${e}`));
+    } catch (e) {
+      log.error(`error while processing item. ${e}`)
+    }
   }
 
   process_item(item, ack) {
     return ItemsProcessor.process_data(item).then((processed_item) => {
       var query_string = ItemsProcessor.generate_query_string(processed_item);
 
-      if(process.env['NODE_ENV'] !== 'production'){
+      if (process.env['NODE_ENV'] !== 'production') {
         log.info(query_string);
       } else {
         new Promise((resolve) => {
           this.db.run(query_string, (err, items) => {
-            if(err){ log.error(err); }
+            if (err) { log.error(err); }
             log.info(`item added to table ${processed_item.item_table}`);
             resolve(items);
           });
@@ -281,15 +303,15 @@ class ItemsProcessor {
       process.emit('postprocess', Object.assign({}, processed_item));
 
       //sleep before next restoring session
-      setTimeout(ack || function(){}, RESTORING_DELAY);
+      setTimeout(ack || function() { }, RESTORING_DELAY);
 
-    }).catch(ack || function(){});
+    }).catch(ack || function() { });
   }
 }
 
 
 //run worker
-if(process.env['NODE_ENV'] !== 'test'){
+if (process.env['NODE_ENV'] !== 'test') {
   new ItemsProcessor();
 }
 
