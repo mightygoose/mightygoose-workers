@@ -7,7 +7,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "env $(\\cat .env| xargs) node workers/items_processor.js",
-    "test": "env $(\\cat .env| xargs) NODE_ENV=test mocha tests/*.js"
+    "test": "env $(\\cat .env| xargs) NODE_ENV=test jest" 
   },
   "dependencies": {
     "bloom-text-compare": "^0.0.0",
@@ -23,6 +23,7 @@
     "spotify-web-api-node": "^5.0.2"
   },
   "devDependencies": {
-    "dotenv": "^16.0.3"
+    "dotenv": "^16.0.3",
+    "jest": "^29.3.1"
   }
 }

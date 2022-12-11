@@ -9,22 +9,19 @@ const data4 = require('tests/fake_data/nothing_restored.json');
 const spider_data = require('tests/fake_data/spider_data.json');
 
 
-describe('ItemsProcessor', function(){
-  this.timeout(15000);
+describe('ItemsProcessor', function() {
   describe('static methods', () => {
 
-    it('should generate badges correctly', (done) => {
-      ItemsProcessor.process_data(spider_data).then(data => {
-        console.log(data);
-        assert.equal(true, true);
-      }).then(done)
+    it('should generate badges correctly', async () => {
+      const data = await ItemsProcessor.process_data(spider_data);
+      expect(true).toBe(true);
     });
 
     it('should generate status correctly', () => {
-      assert.equal(ItemsProcessor.generate_status(data), "good");
-      assert.equal(ItemsProcessor.generate_status(data2), "good");
-      assert.equal(ItemsProcessor.generate_status(data3), "good");
-      assert.equal(ItemsProcessor.generate_status(data4), "bad");
+      expect(ItemsProcessor.generate_status(data)).toBe("good");
+      expect(ItemsProcessor.generate_status(data2)).toBe("good");
+      expect(ItemsProcessor.generate_status(data3)).toBe("good");
+      expect(ItemsProcessor.generate_status(data4)).toBe("bad");
     });
 
   });
