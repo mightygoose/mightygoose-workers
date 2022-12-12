@@ -217,20 +217,20 @@ class ItemsProcessor {
           for (var variant of title_variants) {
             data = await restorers[restorer_name].restore(Object.assign({}, processed_item, {
               title: `${variant.artist} - ${variant.album}`
-            }));
+            })).catch((e) => null);
             if (data !== null) {
               return { [restorer_name]: data };
             }
           }
         } catch (e) {
-          log.warn(`could not process item ${item.id} with restorer  ${restorer_name}. Error: ${e}`) 
+          log.warn(`could not process item ${item.id} with restorer  ${restorer_name}. Error: ${e}`)
         }
         return data;
       }));
 
       Object.assign(processed_item, {
         restorers_data: restorersData.reduce((acc, item) => {
-          if(!item){
+          if (!item) {
             return acc;
           }
           return {
