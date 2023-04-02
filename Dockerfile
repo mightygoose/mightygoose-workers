@@ -1,9 +1,6 @@
-FROM node:19-slim
+FROM node:19-alpine
 
 ENV WORKDIR /app
-
-RUN apt-get update
-RUN apt-get install -y g++ gcc make curl
 
 # #install mon
 RUN mkdir /tmp/mon && cd /tmp/mon && curl -L# https://github.com/tj/mon/archive/master.tar.gz | tar zx --strip 1 && make install && rm -rf /tmp/mon
@@ -13,7 +10,7 @@ RUN mkdir /tmp/mongroup && cd /tmp/mongroup && curl -L# https://github.com/jgall
 
 WORKDIR ${WORKDIR}
 COPY package.json /app
-RUN npm install
+RUN yarn install  --ignore-engines
 COPY . .
 
 ENTRYPOINT ["./entrypoint.sh"]
