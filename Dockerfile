@@ -1,6 +1,9 @@
-FROM node:19-alpine
+FROM node:19-slim
 
 ENV WORKDIR /app
+
+RUN apt-get update
+RUN apt-get install -y g++ gcc make curl
 
 # #install mon
 RUN mkdir /tmp/mon && cd /tmp/mon && curl -L# https://github.com/tj/mon/archive/master.tar.gz | tar zx --strip 1 && make install && rm -rf /tmp/mon
