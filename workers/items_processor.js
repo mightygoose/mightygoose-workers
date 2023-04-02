@@ -1,7 +1,5 @@
 "use strict"
 
-const pry = require('pryjs');
-
 const log = require('log-colors');
 const _ = require('lodash');
 const replaceSpecialCharacters = require('replace-special-characters');

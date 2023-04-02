@@ -1,5 +1,3 @@
-const pry = require('pryjs');
-
 const massive = require("massive");
 const log = require('log-colors');
 const spawn = require('co');

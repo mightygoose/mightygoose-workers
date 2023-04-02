@@ -1,5 +1,3 @@
-const pry = require('pryjs');
-
 const log = require('log-colors');
 const spawn = require('co');
 const cheerio = require('cheerio');
