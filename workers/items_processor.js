@@ -31,11 +31,11 @@ class ItemsProcessor {
 
     const init = async () => {
 
-      require('workers/items_postprocessor');
+      require('./items_postprocessor');
 
       var connections = await Promise.all([
-        require('lib/clients/db'),
-        require('lib/clients/queue')
+        require('../lib/clients/db'),
+        require('../lib/clients/queue')
       ]);
 
       self.db = connections[0];
