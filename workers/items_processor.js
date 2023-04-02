@@ -67,7 +67,7 @@ class ItemsProcessor {
         LIMIT 1000
       `;
 
-      var masks = await new Promise((resolve) => self.db.run(masks_query, (err, items) => {
+      var masks = await new Promise((resolve, reject) => self.db.run(masks_query, (err, items) => {
         if (err) { reject(err); }
         resolve(items);
       }));
