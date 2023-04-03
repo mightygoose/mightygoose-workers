@@ -88,7 +88,7 @@ class ItemsProcessor {
         .consume(self.process_item.bind(self));
     };
 
-    init().catch(e => log.error(`erroron initialisation. ${e}`));
+    init().catch(e => log.error(`error on initialisation. ${e}`));
 
 
     return this;

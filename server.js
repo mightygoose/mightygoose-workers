@@ -4,6 +4,7 @@ const request = require('koa-request');
 const body_parser = require('koa-body-parser');
 const log = require('log-colors');
 const urllib = require('url');
+require('./workers/items_processor');
 const queueClient = require('./lib/clients/queue');
 
 const RABBITMQ_CHANNEL = process.env['RABBITMQ_CHANNEL'];
