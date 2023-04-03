@@ -4,7 +4,7 @@ const request = require('koa-request');
 const body_parser = require('koa-body-parser');
 const log = require('log-colors');
 const urllib = require('url');
-const queue = require('./lib/clients/queue');
+const queuePromise = require('./lib/clients/queue');
 
 const RABBITMQ_CHANNEL = process.env['RABBITMQ_CHANNEL'];
 const port = process.env['PORT'] || 3000;
@@ -15,7 +15,7 @@ app.use(body_parser({ limit: '10mb' }));
 
 app.use(route.post('/api/add_post', function*() {
   const response = new Promise((resolve) => {
-    queue.then(() => {
+    queuePromise.then(() => {
       queue
         .publish(this.request.body, { key: RABBITMQ_CHANNEL })
         .on('drain', () => resolve(true));
