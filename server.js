@@ -15,9 +15,11 @@ app.use(body_parser({ limit: '10mb' }));
 
 app.use(route.post('/api/add_post', function*() {
   const response = new Promise((resolve) => {
-    queue
-      .publish(this.request.body, { key: RABBITMQ_CHANNEL })
-      .on('drain', () => resolve(true));
+    queue.then(() => {
+      queue
+        .publish(this.request.body, { key: RABBITMQ_CHANNEL })
+        .on('drain', () => resolve(true));
+    })
   }).then(() => {
     log.info(`${item.crawler_name} crawler item #${item.sh_key} added to queue`);
     return ["in_process", item['badges']];
