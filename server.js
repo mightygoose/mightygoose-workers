@@ -15,7 +15,7 @@ app.use(body_parser({ limit: '10mb' }));
 
 app.use(route.post('/api/add_post', function*() {
   const response = new Promise((resolve) => {
-    queuePromise.then(() => {
+    queuePromise.then((queue) => {
       queue
         .publish(this.request.body, { key: RABBITMQ_CHANNEL })
         .on('drain', () => resolve(true));
