@@ -32,10 +32,11 @@ app.use(function*(next) {
 app.use(body_parser({ limit: '10mb' }));
 
 app.use(route.post('/api/add_post', function*() {
+  const item = this.request.body;
   const response = new Promise((resolve) => {
     queuePromise.then((queue) => {
       queue
-        .publish(this.request.body, { key: RABBITMQ_CHANNEL })
+        .publish(item, { key: RABBITMQ_CHANNEL })
         .on('drain', () => resolve(true));
     })
   }).then(() => {
