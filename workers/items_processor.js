@@ -31,8 +31,6 @@ class ItemsProcessor {
 
     const init = async () => {
 
-      require('./items_postprocessor');
-
       var connections = await Promise.all([
         require('../lib/clients/db'),
         require('../lib/clients/queue')
@@ -297,8 +295,6 @@ class ItemsProcessor {
           });
         });
       }
-
-      process.emit('postprocess', Object.assign({}, processed_item));
 
       //sleep before next restoring session
       setTimeout(ack || function() { }, RESTORING_DELAY);
