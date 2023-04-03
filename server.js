@@ -4,12 +4,30 @@ const request = require('koa-request');
 const body_parser = require('koa-body-parser');
 const log = require('log-colors');
 const urllib = require('url');
-const queuePromise = require('./lib/clients/queue');
+const queueClient = require('./lib/clients/queue');
 
 const RABBITMQ_CHANNEL = process.env['RABBITMQ_CHANNEL'];
 const port = process.env['PORT'] || 3000;
 
+const queuePromise = queueClient.then(q => q.default());
+
 var app = koa();
+
+//response time
+app.use(function*(next) {
+  var start = new Date;
+  yield next;
+  var ms = new Date - start;
+  this.set('X-Response-Time', ms + 'ms');
+});
+
+// logger
+app.use(function*(next) {
+  var start = new Date;
+  yield next;
+  var ms = new Date - start;
+  log.info(`${this.method} ${this.url} - ${ms} ms`);
+});
 
 app.use(body_parser({ limit: '10mb' }));
 
