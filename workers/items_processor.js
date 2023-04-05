@@ -3,6 +3,8 @@
 const log = require('log-colors');
 const _ = require('lodash');
 const replaceSpecialCharacters = require('replace-special-characters');
+// const { client } = require('../lib/clients/redis');
+const { Worker } = require("bullmq");
 
 const string_parser = require('../lib/string_parser');
 const StringAnalyser = require('../lib/string_analyser');
@@ -16,11 +18,12 @@ const restorers = {
   spotify: new (require('../lib/restorers/spotify')).AlbumRestorer(),
 }
 
+const connection = require('../lib/redis');
+
+const config = require('../config');
+
 const analyser = new StringAnalyser();
 
-
-const RABBITMQ_CHANNEL = process.env['RABBITMQ_CHANNEL'];
-const RESTORING_DELAY = process.env['RESTORING_DELAY'];
 
 const MAX_RESTORING_ATTEMPTS = 2;
 
@@ -33,11 +36,9 @@ class ItemsProcessor {
 
       var connections = await Promise.all([
         require('../lib/clients/db'),
-        require('../lib/clients/queue')
       ]);
 
       self.db = connections[0];
-      self.queue = connections[1];
 
       log.info('pulling masks');
       var masks_query = `
@@ -62,7 +63,6 @@ class ItemsProcessor {
           ) z
         WHERE y.mask = z.mask AND occurencies > 10
         ORDER BY occurencies desc
-        LIMIT 1000
       `;
 
       var masks = await new Promise((resolve, reject) => self.db.run(masks_query, (err, items) => {
@@ -77,15 +77,21 @@ class ItemsProcessor {
 
       analyser.on('weights_updated', () => log.info('title analyser trained'));
 
-      self.queue.on('disconnected', () => {
-        log.info('disconnected from queue. exiting.');
-        process.exit(0);
-      });
+      const worker = new Worker(config.ITEMS_CHANNEL, async ({ name, data }) => {
+        if (name === config.PROCESS_ITEM_JOB) {
+          await self.process_item(data);
 
-      self.queue
-        .default()
-        .queue({ name: RABBITMQ_CHANNEL })
-        .consume(self.process_item.bind(self));
+          //sleep before next restoring session
+          log.info(`waiting ${config.RESTORING_DELAY}ms`);
+          await new Promise((resolve) => {
+            setTimeout(resolve, config.RESTORING_DELAY);
+          });
+        }
+      }, { connection });
+
+      worker.on('error', (error) => {
+        log.error(`worker error: ${error}`);
+      });
     };
 
     init().catch(e => log.error(`error on initialisation. ${e}`));
@@ -187,7 +193,7 @@ class ItemsProcessor {
 
   static async process_data(item, masks) {
     try {
-      log.info(`got item #${item.sh_key}`);
+      log.info(`processing item #${item.sh_key}`);
       var processed_item = Object.assign({}, item);
 
       //should be filtered on spider side
@@ -199,7 +205,6 @@ class ItemsProcessor {
 
       var mask = analyser.classify_mask(processed_item.title)[0];
       var title_variants = mask ? string_parser.parse_string(processed_item.title, mask.mask).slice(0, MAX_RESTORING_ATTEMPTS) : [];
-
 
       const restorersData = await Promise.all(Object.keys(restorers).map(async (restorer_name) => {
         var data = null;
@@ -280,7 +285,7 @@ class ItemsProcessor {
     }
   }
 
-  process_item(item, ack) {
+  async process_item(item, ack) {
     return ItemsProcessor.process_data(item).then((processed_item) => {
       var query_string = ItemsProcessor.generate_query_string(processed_item);
 
@@ -296,10 +301,9 @@ class ItemsProcessor {
         });
       }
 
-      //sleep before next restoring session
-      setTimeout(ack || function() { }, RESTORING_DELAY);
-
-    }).catch(ack || function() { });
+    }).catch(function(e) {
+      log.error(e);
+    });
   }
 }
 

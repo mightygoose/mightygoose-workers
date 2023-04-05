@@ -1,51 +1,36 @@
-const koa = require('koa');
+const Koa = require('koa');
 const route = require('koa-route');
-const request = require('koa-request');
 const body_parser = require('koa-body-parser');
 const log = require('log-colors');
-const urllib = require('url');
-require('./workers/items_processor');
-const queueClient = require('./lib/clients/queue');
+const { Queue } = require("bullmq");
+const connection = require('./lib/redis');
+const config = require('./config');
 
-const RABBITMQ_CHANNEL = process.env['RABBITMQ_CHANNEL'];
 const port = process.env['PORT'] || 3000;
 
-const queuePromise = queueClient.then(q => q.default());
+const queue = new Queue(config.ITEMS_CHANNEL, { connection });
 
-var app = koa();
+const app = new Koa();
 
 //response time
-app.use(function*(next) {
-  var start = new Date;
-  yield next;
-  var ms = new Date - start;
-  this.set('X-Response-Time', ms + 'ms');
+app.use(async (ctx, next) => {
+  const start = Date.now();
+  await next();
+  const ms = Date.now() - start;
+  console.log(`${ctx.method} ${ctx.url} - ${ms}ms`);
+  ctx.set('X-Response-Time', ms + 'ms');
 });
 
-// logger
-app.use(function*(next) {
-  var start = new Date;
-  yield next;
-  var ms = new Date - start;
-  log.info(`${this.method} ${this.url} - ${ms} ms`);
-});
 
 app.use(body_parser({ limit: '10mb' }));
 
-app.use(route.post('/api/add_post', function*() {
-  const item = this.request.body;
-  const response = new Promise((resolve) => {
-    queuePromise.then((queue) => {
-      queue
-        .publish(item, { key: RABBITMQ_CHANNEL })
-        .on('drain', () => resolve(true));
-    })
-  }).then(() => {
-    log.info(`${item.crawler_name} crawler item #${item.sh_key} added to queue`);
-    return ["in_process", item['badges']];
-  });
+app.use(route.post('/api/add_post', async (ctx) => {
+  const item = ctx.request.body;
 
-  this.body = JSON.stringify(response);
+  queue.add(config.PROCESS_ITEM_JOB, item)
+  log.info(`${item.crawler_name} crawler item #${item.sh_key} added to queue`);
+
+  ctx.body = JSON.stringify(["in_process", item['badges']]);
 }));
 
 
