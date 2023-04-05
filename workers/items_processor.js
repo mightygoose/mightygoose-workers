@@ -92,6 +92,10 @@ class ItemsProcessor {
       worker.on('error', (error) => {
         log.error(`worker error: ${error}`);
       });
+
+      worker.on('drained', () => {
+        log.info('queue is empty, no items to process');
+      });
     };
 
     init().catch(e => log.error(`error on initialisation. ${e}`));
