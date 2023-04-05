@@ -289,7 +289,7 @@ class ItemsProcessor {
     }
   }
 
-  async process_item(item, ack) {
+  async process_item(item) {
     return ItemsProcessor.process_data(item).then((processed_item) => {
       var query_string = ItemsProcessor.generate_query_string(processed_item);
 
@@ -299,7 +299,7 @@ class ItemsProcessor {
         new Promise((resolve) => {
           this.db.run(query_string, (err, items) => {
             if (err) { log.error(err); }
-            log.info(`item added to table ${processed_item.item_table}`);
+            log.info(`item #${item.sh_key} added to table ${processed_item.item_table}`);
             resolve(items);
           });
         });
