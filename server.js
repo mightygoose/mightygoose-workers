@@ -4,7 +4,9 @@ const body_parser = require('koa-body-parser');
 const log = require('log-colors');
 const { Queue } = require("bullmq");
 const connection = require('./lib/redis');
+const dbClient = require('./lib/asyncDbClient');
 const config = require('./config');
+
 
 const port = process.env['PORT'] || 3000;
 
@@ -23,6 +25,17 @@ app.use(async (ctx, next) => {
 
 
 app.use(body_parser({ limit: '10mb' }));
+
+
+app.use(route.get('/api/get_urls', async (ctx) => {
+  const limit = ctx.query.limit || 1;
+  const urls = await dbClient.query(`select url from items where sh_type='BlogPostItem' order by random() limit ${limit}`);
+  ctx.body = urls.map((item) => {
+    const url = new URL(item.url);
+    return url.origin;
+  });
+}));
+
 
 app.use(route.post('/api/add_post', async (ctx) => {
   const item = ctx.request.body;
