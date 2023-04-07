@@ -31,8 +31,9 @@ RUN \
 FROM base AS builder
 
 WORKDIR ${WORKDIR}
-COPY package.json /app
-RUN yarn install  --ignore-engines
-COPY . .
+COPY --from=deps /app/node_modules ./node_modules
+COPY src .
+COPY entrypoint.sh mongroup.conf ./
 
 ENTRYPOINT ["./entrypoint.sh"]
+
