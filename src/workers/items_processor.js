@@ -89,7 +89,6 @@ class ItemsProcessor {
         }
       }, {
         connection,
-        concurrency: 1,
         removeOnComplete: true,
         removeOnFail: true
       });
