@@ -12,8 +12,6 @@ const port = process.env['PORT'] || 3000;
 
 const queue = new Queue(config.ITEMS_CHANNEL, {
   connection,
-  removeOnComplete: true,
-  removeOnFail: true
 });
 
 const app = new Koa();
@@ -44,7 +42,10 @@ app.use(route.get('/api/get_urls', async (ctx) => {
 app.use(route.post('/api/add_post', async (ctx) => {
   const item = ctx.request.body;
 
-  queue.add(config.PROCESS_ITEM_JOB, item);
+  queue.add(config.PROCESS_ITEM_JOB, item, {
+    removeOnComplete: true,
+    removeOnFail: true
+  });
   log.info(`${item.crawler_name} crawler item #${item.sh_key} added to queue`);
 
   ctx.body = JSON.stringify(["in_process", item['badges']]);

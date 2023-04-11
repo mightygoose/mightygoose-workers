@@ -86,6 +86,8 @@ class ItemsProcessor {
           await new Promise((resolve) => {
             setTimeout(resolve, config.RESTORING_DELAY);
           });
+
+          return true;
         }
       }, {
         connection,
