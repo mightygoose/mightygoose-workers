@@ -87,7 +87,12 @@ class ItemsProcessor {
             setTimeout(resolve, config.RESTORING_DELAY);
           });
         }
-      }, { connection });
+      }, {
+        connection,
+        concurrency: 1,
+        removeOnComplete: true,
+        removeOnFail: true
+      });
 
       worker.on('error', (error) => {
         log.error(`worker error: ${error}`);
@@ -95,6 +100,11 @@ class ItemsProcessor {
 
       worker.on('drained', () => {
         log.info('queue is empty, no items to process');
+      });
+
+      process.on('SIGTERM', () => {
+        console.info('SIGTERM signal received. closing the worker');
+        worker.close(true);
       });
     };
 

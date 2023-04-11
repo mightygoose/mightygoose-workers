@@ -40,7 +40,7 @@ app.use(route.get('/api/get_urls', async (ctx) => {
 app.use(route.post('/api/add_post', async (ctx) => {
   const item = ctx.request.body;
 
-  queue.add(config.PROCESS_ITEM_JOB, item)
+  queue.add(config.PROCESS_ITEM_JOB, item);
   log.info(`${item.crawler_name} crawler item #${item.sh_key} added to queue`);
 
   ctx.body = JSON.stringify(["in_process", item['badges']]);
@@ -49,7 +49,12 @@ app.use(route.post('/api/add_post', async (ctx) => {
 
 
 try {
-  app.listen(port, () => log.info(`server is running on port: ${port}`))
+  app.listen(port, () => log.info(`server is running on port: ${port}`));
+
+  process.on('SIGTERM', () => {
+    console.info('SIGTERM signal received. closing the queue');
+    queue.close();
+  });
 } catch (error) {
   log.error(`could not start server: ${error}`)
 }
