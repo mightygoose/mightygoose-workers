@@ -10,7 +10,11 @@ const config = require('./config');
 
 const port = process.env['PORT'] || 3000;
 
-const queue = new Queue(config.ITEMS_CHANNEL, { connection });
+const queue = new Queue(config.ITEMS_CHANNEL, {
+  connection,
+  removeOnComplete: true,
+  removeOnFail: true
+});
 
 const app = new Koa();
 

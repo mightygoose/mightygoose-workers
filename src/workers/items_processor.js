@@ -89,8 +89,6 @@ class ItemsProcessor {
         }
       }, {
         connection,
-        removeOnComplete: true,
-        removeOnFail: true
       });
 
       worker.on('error', (error) => {
