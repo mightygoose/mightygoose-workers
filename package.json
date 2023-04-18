@@ -11,6 +11,7 @@
     "test": "env $(\\cat .env| xargs) NODE_ENV=test jest"
   },
   "dependencies": {
+    "bandcamp-scraper": "^1.5.0",
     "bloom-text-compare": "^0.0.0",
     "bullmq": "^3.10.3",
     "cheerio": "^1.0.0-rc.12",

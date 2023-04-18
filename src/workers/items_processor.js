@@ -16,6 +16,7 @@ const restorers = {
   itunes: new (require('../lib/restorers/itunes')).AlbumRestorer(),
   deezer: new (require('../lib/restorers/deezer')).AlbumRestorer(),
   spotify: new (require('../lib/restorers/spotify')).AlbumRestorer(),
+  bandcamp: new (require('../lib/restorers/bandcamp')).AlbumRestorer(),
 }
 
 const connection = require('../lib/redis');
@@ -129,9 +130,11 @@ class ItemsProcessor {
       spotify: item.restorers_data.spotify,
     }, _.isUndefined(item.restorers_data.deezer) ? {} : {
       deezer: item.restorers_data.deezer,
+    }, _.isUndefined(item.restorers_data.bandcamp) ? {} : {
+      bandcamp: item.restorers_data.bandcamp,
     }), [
       "sh_key", "sh_type", "embed", "images", "title", "url",
-      "badges", "discogs", "itunes", "deezer", "spotify", "tags"
+      "badges", "discogs", "itunes", "deezer", "bandcamp", "spotify", "tags"
     ]);
 
 
@@ -222,7 +225,6 @@ class ItemsProcessor {
       const restorersData = await Promise.all(Object.keys(restorers).map(async (restorer_name) => {
         var data = null;
         try {
-
           if (!title_variants.length) {
             return null
             // data = await restorers[restorer_name].restore(processed_item);
