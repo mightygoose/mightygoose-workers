@@ -21,6 +21,7 @@ const restorers = {
   deezer: new (require('../lib/restorers/deezer')).AlbumRestorer(),
   spotify: new (require('../lib/restorers/spotify')).AlbumRestorer(),
   bandcamp: new (require('../lib/restorers/bandcamp')).AlbumRestorer(),
+  musicbrainz: new (require('../lib/restorers/musicbrainz')).AlbumRestorer(),
 }
 
 
@@ -43,11 +44,13 @@ const generateQueryString = (item) => {
     spotify: item.restorers_data.spotify,
   }, _.isUndefined(item.restorers_data.deezer) ? {} : {
     deezer: item.restorers_data.deezer,
+  }, _.isUndefined(item.restorers_data.musicbrainz) ? {} : {
+    musicbrainz: item.restorers_data.musicbrainz,
   }, _.isUndefined(item.restorers_data.bandcamp) ? {} : {
     bandcamp: item.restorers_data.bandcamp,
   }), [
     "sh_key", "sh_type", "embed", "images", "title", "url",
-    "badges", "discogs", "itunes", "deezer", "bandcamp", "spotify", "tags"
+    "badges", "discogs", "itunes", "deezer", "musicbrainz", "bandcamp", "spotify", "tags"
   ]);
 
 
