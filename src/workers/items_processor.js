@@ -108,6 +108,8 @@ const generateStatus = (item) => {
     case item.restorers_data.itunes && item.restorers_data.itunes.similarity === 1:
     case item.restorers_data.deezer && item.restorers_data.deezer.similarity === 1:
     case item.restorers_data.spotify && item.restorers_data.spotify.similarity === 1:
+    case item.restorers_data.musicbrainz && item.restorers_data.musicbrainz.similarity === 1:
+    case item.restorers_data.bandcamp && item.restorers_data.bandcamp.similarity === 1:
       return 'good';
     default:
       return 'bad';
