@@ -4,7 +4,9 @@ const log = require('log-colors');
 const _ = require('lodash');
 const replaceSpecialCharacters = require('replace-special-characters');
 const { Worker } = require("bullmq");
+const path = require('path');
 
+const writeFile = require('../lib/writeFile');
 const dbClient = require('../lib/asyncDbClient');
 
 const string_parser = require('../lib/string_parser');
@@ -222,11 +224,17 @@ const processItem = async (item) => {
     const processedItem = await processData(item);
     const queryString = generateQueryString(processedItem);
 
-    if (process.env['NODE_ENV'] !== 'production') {
-      return log.info(queryString);
+    if (process.env['NODE_ENV'] === 'production') {
+      await dbClient.query(queryString);
+      log.info(`item #${item.sh_key} added to table ${processedItem.item_table}`);
+    } else {
+      log.info(queryString);
     }
-    await dbClient.query(queryString);
-    log.info(`item #${item.sh_key} added to table ${processedItem.item_table}`);
+    if (processedItem.status === 'good') {
+      const contentFilePath = path.join(config.ITEMS_DATA_DIR, `${processedItem.sh_key}.html`);
+      log.info(`saving content to: ${contentFilePath}`);
+      await writeFile(contentFilePath, processedItem.content);
+    }
   } catch (e) {
     log.error(e);
   }
