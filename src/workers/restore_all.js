@@ -4,12 +4,15 @@ const BandcampRestorer = require('../lib/restorers/bandcamp');
 const MusicbrainzRestorer = require('../lib/restorers/musicbrainz');
 const dbClient = require('../lib/asyncDbClient');
 const _ = require('lodash');
+const config = require('../config');
 
 const restorers = {
   spotify: new SpotifyRestorer.AlbumRestorer(),
   bandcamp: new BandcampRestorer.AlbumRestorer(),
   musicbrainz: new MusicbrainzRestorer.AlbumRestorer(),
 }
+
+const RESTORING_DELAY = config.RESTORING_DELAY * 2;
 
 
 const lastRestoredItemQuery = `
@@ -100,10 +103,11 @@ const run = async () => {
       log.error(updateQuery);
     }
 
-    log.info('waiting 1 sec');
-    await wait(1000)
+    log.info(`waiting ${RESTORING_DELAY} ms`);
+    await wait(RESTORING_DELAY);
   }
 
+  process.exit(0);
 
 }
 
