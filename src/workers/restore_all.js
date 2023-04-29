@@ -12,7 +12,7 @@ const restorers = {
   musicbrainz: new MusicbrainzRestorer.AlbumRestorer(),
 }
 
-const RESTORING_DELAY = config.RESTORING_DELAY * 2;
+const RESTORING_DELAY = config.RESTORING_DELAY * 6;
 
 
 const lastRestoredItemQuery = `
